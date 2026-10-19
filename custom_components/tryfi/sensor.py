@@ -51,7 +51,7 @@ SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
         key="steps",
         name="Steps",
         native_unit_of_measurement="steps",
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
         icon="mdi:paw",
     ),
     "goal": SensorEntityDescription(
@@ -66,7 +66,7 @@ SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
         name="Distance",
         native_unit_of_measurement=UnitOfLength.KILOMETERS,
         device_class=SensorDeviceClass.DISTANCE,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        state_class=SensorStateClass.TOTAL,
         icon="mdi:map-marker-distance",
     ),
     "sleep": SensorEntityDescription(
