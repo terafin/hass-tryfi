@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import requests
 import responses
 import urllib.parse
@@ -444,6 +445,33 @@ def test_pet_update_behavior_stats_exception():
     with patch("custom_components.tryfi.pytryfi.common.query.getPetHealthTrends", side_effect=Exception("Trend error")):
         # Should not raise exception
         pet.updateBehaviorStats(requests.Session())
+
+
+def test_pet_update_behavior_stats_logs_the_failure_cause(caplog):
+    """A failed trend fetch logs the exception itself, not only its message.
+
+    The fetch ends with `response["data"][...]`, so a GraphQL error surfaces as
+    "'NoneType' object is not subscriptable" -- identical text to an auth or
+    schema failure. Without the traceback the log cannot say which it was.
+    """
+    pet = FiPet("test-pet")
+    pet._device = FiDevice("dev-series3")
+    pet._device._moduleId = "FC3001"
+
+    with caplog.at_level(logging.WARNING), patch(
+        "custom_components.tryfi.pytryfi.common.query.getPetHealthTrends",
+        side_effect=TypeError("'NoneType' object is not subscriptable"),
+    ):
+        pet.updateBehaviorStats(requests.Session())
+
+    records = [r for r in caplog.records if "behavior trends" in r.getMessage()]
+    assert records, "a failed trend fetch logged nothing"
+    assert len(records) == 3, f"expected one warning per period, got {len(records)}"
+    for record in records:
+        assert record.exc_info is not None, (
+            "the trend fetch failure was logged without its traceback, "
+            "so the cause is lost"
+        )
 
 
 def test_pet_led_and_lost_mode_controls():

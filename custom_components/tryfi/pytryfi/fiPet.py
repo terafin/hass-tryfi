@@ -230,7 +230,8 @@ class FiPet(object):
                 self.updateBehaviorStats(session)
             except Exception as e:
                 LOGGER.warning(
-                    f"Could not update behavior stats for Pet {self.name}.\n{e}"
+                    f"Could not update behavior stats for Pet {self.name}.\n{e}",
+                    exc_info=True,
                 )
                 # Behavior stats may not be available for older collars
                 pass
@@ -246,8 +247,14 @@ class FiPet(object):
                 behavior_trends = healthTrendsJSON.get("behaviorTrends", [])
                 self.setBehaviorStatsFromTrends(behavior_trends, period)
             except Exception as e:
+                # `str(e)` is all this used to log. A malformed GraphQL payload
+                # raises "'NoneType' object is not subscriptable", which names
+                # neither the period's response nor the call that failed, so a
+                # transport error, an auth failure and a schema change all read
+                # the same. The traceback is what tells them apart.
                 LOGGER.warning(
-                    f"Could not fetch {period} behavior trends for {self.name}: {e}"
+                    f"Could not fetch {period} behavior trends for {self.name}: {e}",
+                    exc_info=True,
                 )
 
     def _parseBehaviorDuration(self, input: str) -> int:
