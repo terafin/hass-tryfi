@@ -40,8 +40,6 @@ from .pytryfi.fiWifiNetwork import FiWifiNetwork
 
 _LOGGER = logging.getLogger(__name__)
 
-ATTR_LAST_RESET = "last_reset"
-
 # Counters that reset at the start of their period, so they need a last_reset.
 PERIOD_COUNTER_TYPES = frozenset({"STEPS", "DISTANCE"})
 
@@ -372,8 +370,8 @@ class PetStatsSensor(TryFiSensorBase):
         }
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the start of the current period as last_reset.
+    def last_reset(self) -> datetime | None:
+        """Return the start of the current period.
 
         These counters reset to zero at the start of their period, so they use
         state_class TOTAL. The recorder only starts a new statistics cycle for
@@ -382,10 +380,7 @@ class PetStatsSensor(TryFiSensorBase):
         """
         if self._stat_type not in PERIOD_COUNTER_TYPES:
             return None
-        period_start = self._period_start()
-        if period_start is None:
-            return None
-        return {ATTR_LAST_RESET: period_start}
+        return self._period_start()
 
     def _period_start(self) -> datetime | None:
         """Return the instant the current period began, in local time."""

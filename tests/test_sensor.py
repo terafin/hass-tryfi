@@ -503,20 +503,21 @@ def test_period_counters_report_a_last_reset(
     sensor = PetStatsSensor(
         mock_coordinator_sensor, mock_pet_with_stats, "STEPS", "DAILY"
     )
-    attrs = sensor.extra_state_attributes
-    assert attrs is not None
-    reset = attrs["last_reset"]
+    reset = sensor.last_reset
+    assert reset is not None
     assert reset.hour == 0 and reset.minute == 0 and reset.second == 0
+    # Home Assistant publishes it as the ISO string the recorder parses.
+    assert sensor.state_attributes == {"last_reset": reset.isoformat()}
 
     weekly = PetStatsSensor(
         mock_coordinator_sensor, mock_pet_with_stats, "STEPS", "WEEKLY"
     )
-    assert weekly.extra_state_attributes["last_reset"].weekday() == 0
+    assert weekly.last_reset.weekday() == 0
 
     monthly = PetStatsSensor(
         mock_coordinator_sensor, mock_pet_with_stats, "STEPS", "MONTHLY"
     )
-    assert monthly.extra_state_attributes["last_reset"].day == 1
+    assert monthly.last_reset.day == 1
 
 
 def test_non_period_counters_do_not_report_a_last_reset(
@@ -526,4 +527,5 @@ def test_non_period_counters_do_not_report_a_last_reset(
     sensor = PetStatsSensor(
         mock_coordinator_sensor, mock_pet_with_stats, "SLEEP", "DAILY"
     )
-    assert sensor.extra_state_attributes is None
+    assert sensor.last_reset is None
+    assert sensor.state_attributes is None
