@@ -489,3 +489,41 @@ def test_period_counters_use_total_state_class() -> None:
             f"not {description.state_class}"
         )
         assert description.state_class is not SensorStateClass.TOTAL_INCREASING
+
+
+def test_period_counters_report_a_last_reset(
+    mock_coordinator_sensor, mock_pet_with_stats
+):
+    """Period counters publish last_reset, or every reset is summed as usage.
+
+    The recorder starts a new statistics cycle for a TOTAL sensor only when
+    last_reset changes. Without it the first zero point is kept forever and
+    each period's counters are summed as though they were consumption.
+    """
+    sensor = PetStatsSensor(
+        mock_coordinator_sensor, mock_pet_with_stats, "STEPS", "DAILY"
+    )
+    attrs = sensor.extra_state_attributes
+    assert attrs is not None
+    reset = attrs["last_reset"]
+    assert reset.hour == 0 and reset.minute == 0 and reset.second == 0
+
+    weekly = PetStatsSensor(
+        mock_coordinator_sensor, mock_pet_with_stats, "STEPS", "WEEKLY"
+    )
+    assert weekly.extra_state_attributes["last_reset"].weekday() == 0
+
+    monthly = PetStatsSensor(
+        mock_coordinator_sensor, mock_pet_with_stats, "STEPS", "MONTHLY"
+    )
+    assert monthly.extra_state_attributes["last_reset"].day == 1
+
+
+def test_non_period_counters_do_not_report_a_last_reset(
+    mock_coordinator_sensor, mock_pet_with_stats
+):
+    """Sleep and nap are durations, not period-resetting counters."""
+    sensor = PetStatsSensor(
+        mock_coordinator_sensor, mock_pet_with_stats, "SLEEP", "DAILY"
+    )
+    assert sensor.extra_state_attributes is None
